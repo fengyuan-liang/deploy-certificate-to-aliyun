@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 0 1 */2 *' # 每两个月的第一天执行一次
+    - cron: '0 0 20 */2 *' # 每两个月的第二十天执行一次
 
 jobs:
   renew-deploy-cert:
