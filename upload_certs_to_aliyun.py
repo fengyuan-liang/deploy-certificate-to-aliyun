@@ -1,6 +1,6 @@
 import os
 from aliyunsdkcore.client import AcsClient
-from aliyunsdkcdn.request.v20180510 import SetDomainServerCertificateRequest
+from aliyunsdkcdn.request.v20180510 import SetCdnDomainSSLCertificateRequest
 
 def get_env_var(key):
     value = os.getenv(key)
@@ -25,14 +25,16 @@ def upload_certificate(client, domain_name, cert_path, key_path):
     with open(expanded_key_path, 'r') as f:
         key = f.read()
 
-    request = SetDomainServerCertificateRequest.SetDomainServerCertificateRequest()
-    request.set_accept_format('json')
+    request = SetCdnDomainSSLCertificateRequest.SetCdnDomainSSLCertificateRequest()
+    # CDN加速域名
     request.set_DomainName(domain_name)
-    request.set_ServerCertificate('on')
+    # 证书名称
+    request.set_CertName(domain_name)
     request.set_CertType('upload')
-    request.set_ServerCertificate(cert)
-    request.set_PrivateKey(key)
-    request.set_ForceSet(1)
+    request.set_SSLProtocol('on')
+    request.set_SSLPub(cert)
+    request.set_SSLPri(key)
+    request.set_CertRegion('cn-hangzhou')
 
     response = client.do_action_with_exception(request)
     print(str(response, encoding='utf-8'))
