@@ -31,9 +31,10 @@ jobs:
     - name: Prepare acme.sh credentials
       run: |
         mkdir -p ~/.acme.sh
-        echo 'export Ali_Key="${{ secrets.ALIYUN_ACCESS_KEY_ID }}"' > ~/.acme.sh/credentials.ini
-        echo 'export Ali_Secret="${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}"' >> ~/.acme.sh/credentials.ini
-        chmod 600 ~/.acme.sh/credentials.ini
+        IFS=',' read -r -a domain_array <<< "${{ secrets.DOMAINS }}"
+        for domain in "${domain_array[@]}"; do
+          touch -p ~/certs/${domain}
+        done
 
     - name: Obtain SSL Certificates
       env:
