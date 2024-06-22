@@ -15,6 +15,7 @@ fork该项目，并填写对应参数即可
 - `ALIYUN_ACCESS_KEY_SECRET`：阿里云账户SK
 - `DOMAIN`: 要设置域名的二级域名，例如要设置*.example.com，这里填写的就是example.com, 多个域名用英文逗号隔开
 - `ALIYUN_CDN_DOMAIN`：设置阿里云cdn域名，一般是三级域名，例如cdn.example.com，需要跟上面的DOMAINS对应，否则会设置错误
+- EMAIL:  证书过期时提醒的邮件
 
 
 

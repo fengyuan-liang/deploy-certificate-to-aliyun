@@ -21,10 +21,12 @@ jobs:
         python-version: '3.8'
 
     - name: Install acme.sh
+      env:
+        EMAIL: ${{ secrets.EMAIL}}
       run: |
         sudo apt-get update
         sudo apt-get install -y socat
-        curl https://get.acme.sh | sh
+        curl https://get.acme.sh | sh -s email="${EMAIL}"
 
     - name: Prepare acme.sh credentials
       run: |
