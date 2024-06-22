@@ -36,12 +36,13 @@ jobs:
     - name: Obtain SSL Certificates
       env:
         DOMAINS: ${{ secrets.DOMAINS }}
+        Ali_Key: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+        Ali_Secret: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
       run: |
         IFS=',' read -r -a domain_array <<< "${DOMAINS}"
         for domain in "${domain_array[@]}"; do
           ~/.acme.sh/acme.sh --issue --dns dns_ali -d "*.${domain}" \
-          --key-file ~/certs/${domain}/privkey.pem --fullchain-file ~/certs/${domain}/fullchain.pem \
-          --dns-credentials-file ~/.acme.sh/credentials.ini
+          --key-file ~/certs/${domain}/privkey.pem --fullchain-file ~/certs/${domain}/fullchain.pem
         done
 
 
