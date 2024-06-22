@@ -1,0 +1,2 @@
+aliyun-python-sdk-core
+aliyun-python-sdk-cdn

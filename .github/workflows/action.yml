@@ -1,0 +1,68 @@
+name: Auto Renew and Deploy SSL Certificates
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 1 */2 *' # 每两个月的第一天执行一次
+
+jobs:
+  renew-deploy-cert:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Install acme.sh
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y socat
+        curl https://get.acme.sh | sh
+
+    - name: Prepare acme.sh credentials
+      run: |
+        mkdir -p ~/.acme.sh
+        echo 'export Ali_Key="${{ secrets.ALIYUN_ACCESS_KEY_ID }}"' > ~/.acme.sh/credentials.ini
+        echo 'export Ali_Secret="${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}"' >> ~/.acme.sh/credentials.ini
+        chmod 600 ~/.acme.sh/credentials.ini
+
+    - name: Obtain SSL Certificates
+      env:
+        DOMAINS: ${{ secrets.DOMAINS }}
+      run: |
+        IFS=',' read -r -a domain_array <<< "${DOMAINS}"
+        for domain in "${domain_array[@]}"; do
+          ~/.acme.sh/acme.sh --issue --dns dns_ali -d "*.${domain}" \
+          --key-file ~/certs/${domain}/privkey.pem --fullchain-file ~/certs/${domain}/fullchain.pem \
+          --dns-credentials-file ~/.acme.sh/credentials.ini
+        done
+
+
+    - name: Install Python dependencies
+      run: pip install -r requirements.txt
+
+    - name: Upload certificates to Alibaba Cloud CDN
+      run: python upload_certs_to_aliyun.py
+      env:
+        ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+        ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        # 要设置域名的二级域名，例如要设置*.example.com，这里填写的就是example.com, 多个域名用英文逗号隔开
+        DOMAINS: ${{ secrets.DOMAINS }}
+        # 设置阿里云cdn域名，一般是三级域名，例如cdn.example.com，需要跟上面的DOMAINS对应，否则会设置错误
+        ALIYUN_CDN_DOMAINS: ${{ secrets.ALIYUN_CDN_DOMAINS }}
+
+    - name: Clean up
+      env:
+        DOMAINS: ${{ secrets.DOMAINS }}
+      run: |
+        IFS=',' read -r -a domain_array <<< "${DOMAINS}"
+        for domain in "${domain_array[@]}"; do
+          rm -rf ~/certs/${domain}
+        done
