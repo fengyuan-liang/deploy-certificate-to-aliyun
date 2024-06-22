@@ -33,7 +33,7 @@ jobs:
         mkdir -p ~/.acme.sh
         IFS=',' read -r -a domain_array <<< "${{ secrets.DOMAINS }}"
         for domain in "${domain_array[@]}"; do
-          touch -p ~/certs/${domain}
+          mkdir -p ~/certs/${domain}
         done
 
     - name: Obtain SSL Certificates
