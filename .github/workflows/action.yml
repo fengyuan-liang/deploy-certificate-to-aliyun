@@ -53,7 +53,6 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Upload certificates to Alibaba Cloud CDN
-      run: python upload_certs_to_aliyun.py
       env:
         ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
         ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
@@ -61,6 +60,8 @@ jobs:
         DOMAINS: ${{ secrets.DOMAINS }}
         # 设置阿里云cdn域名，一般是三级域名，例如cdn.example.com，需要跟上面的DOMAINS对应，否则会设置错误
         ALIYUN_CDN_DOMAINS: ${{ secrets.ALIYUN_CDN_DOMAINS }}
+  
+      run: python upload_certs_to_aliyun.py
 
     - name: Clean up
       env:

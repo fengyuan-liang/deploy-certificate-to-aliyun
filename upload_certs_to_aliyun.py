@@ -8,11 +8,21 @@ def get_env_var(key):
         raise EnvironmentError(f"Environment variable {key} not set")
     return value
 
+def file_exists_and_not_empty(file_path):
+    expanded_path = os.path.expanduser(file_path)
+    return os.path.isfile(expanded_path) and os.path.getsize(expanded_path) > 0
+
 def upload_certificate(client, domain_name, cert_path, key_path):
-    with open(cert_path, 'r') as f:
+    expanded_cert_path = os.path.expanduser(cert_path)
+    expanded_key_path = os.path.expanduser(key_path)
+
+    if not file_exists_and_not_empty(expanded_cert_path) or not file_exists_and_not_empty(expanded_key_path):
+        raise FileNotFoundError(f"Certificate or key file for domain {domain_name} is missing or empty")
+    
+    with open(expanded_cert_path, 'r') as f:
         cert = f.read()
 
-    with open(key_path, 'r') as f:
+    with open(expanded_key_path, 'r') as f:
         key = f.read()
 
     request = SetDomainServerCertificateRequest.SetDomainServerCertificateRequest()
