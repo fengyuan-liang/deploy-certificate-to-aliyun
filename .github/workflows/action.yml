@@ -43,6 +43,7 @@ jobs:
         Ali_Secret: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
       run: |
         IFS=',' read -r -a domain_array <<< "${DOMAINS}"
+        ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
         for domain in "${domain_array[@]}"; do
           ~/.acme.sh/acme.sh --issue --dns dns_ali -d "*.${domain}" \
           --key-file ~/certs/${domain}/privkey.pem --fullchain-file ~/certs/${domain}/fullchain.pem
