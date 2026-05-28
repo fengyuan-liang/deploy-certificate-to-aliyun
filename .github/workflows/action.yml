@@ -1,11 +1,9 @@
 name: Auto Renew and Deploy SSL Certificates
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: '0 0 20 */2 *' # 每两个月的第二十天执行一次
+  workflow_dispatch:
 
 jobs:
   renew-deploy-cert:
@@ -44,7 +42,7 @@ jobs:
       run: |
         IFS=',' read -r -a domain_array <<< "${DOMAINS}"
         for domain in "${domain_array[@]}"; do
-          ~/.acme.sh/acme.sh --issue --dns dns_ali -d "*.${domain}" \
+          ~/.acme.sh/acme.sh --issue --dns dns_ali -d "${domain}" -d "*.${domain}" \
           --key-file ~/certs/${domain}/privkey.pem --fullchain-file ~/certs/${domain}/fullchain.pem
         done
 
@@ -58,7 +56,7 @@ jobs:
         ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
         # 要设置域名的二级域名，例如要设置*.example.com，这里填写的就是example.com, 多个域名用英文逗号隔开
         DOMAINS: ${{ secrets.DOMAINS }}
-        # 设置阿里云cdn域名，一般是三级域名，例如cdn.example.com，需要跟上面的DOMAINS对应，否则会设置错误
+        # 设置阿里云cdn域名，一般是三级域名，例如cdn.example.com
         ALIYUN_CDN_DOMAINS: ${{ secrets.ALIYUN_CDN_DOMAINS }}
   
       run: python upload_certs_to_aliyun.py
