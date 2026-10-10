@@ -1,6 +1,6 @@
 # Deploy Certificate to Aliyun
 
-每两个月自动部署泛解析证书到阿里云CDN上
+每两个月自动部署泛解析证书到阿里云 CDN 上
 
 ## ✨ 功能特点
 
@@ -25,9 +25,9 @@
 1. 登录[阿里云控制台](https://homenew.console.aliyun.com/)，进入 **访问控制 (RAM)** 页面
 2. 创建一个专用于此项目的用户（推荐，出于安全最佳实践）
 3. 为该用户授权以下策略权限：
-   - `AliyunDNSFullAccess`（管理DNS解析，用于自动验证域名所有权）
-   - `AliyunCDNFullAccess`（管理CDN，用于上传和部署证书）
-   - `AliyunYundunCertFullAccess`（管理SSL证书服务）
+   - `AliyunDNSFullAccess`（管理 DNS 解析，用于自动验证域名所有权）
+   - `AliyunCDNFullAccess`（管理 CDN，用于上传和部署证书）
+   - `AliyunYundunCertFullAccess`（管理 SSL 证书服务）
 4. 为这个用户创建一个 **AccessKey (AK/SK)**，并妥善保存
 
 ### 第三步：在 GitHub 仓库中设置秘密变量
@@ -37,13 +37,13 @@
 3. 在左侧边栏中找到 **"Secrets and variables" → "Actions"**
 4. 点击 **"New repository secret"** 按钮，逐个添加以下秘密变量：
 
-| 变量名                     | 说明                                               | 示例值                         |
-| :------------------------- | :------------------------------------------------- | :----------------------------- |
-| `ALIYUN_ACCESS_KEY_ID`     | 阿里云 AccessKey ID                                | `LTAI5txxxxxxxxxxxxx`          |
-| `ALIYUN_ACCESS_KEY_SECRET` | 阿里云 AccessKey Secret                            | `h6J9Zxxxxxxxxxxxxxxxxxxxx`    |
-| `DOMAINS`                  | 主域名，多个用**英文逗号**隔开                     | `example.com,test.org`         |
-| `ALIYUN_CDN_DOMAINS`       | CDN域名，与DOMAINS顺序对应，多个用**英文逗号**隔开 | `cdn.example.com,img.test.org` |
-| `EMAIL`                    | 接收通知的邮箱地址                                 | `your-email@example.com`       |
+| 变量名                     | 说明                                                  | 示例值                         |
+| :------------------------- | :---------------------------------------------------- | :----------------------------- |
+| `ALIYUN_ACCESS_KEY_ID`     | 阿里云 AccessKey ID                                   | `LTAI5txxxxxxxxxxxxx`          |
+| `ALIYUN_ACCESS_KEY_SECRET` | 阿里云 AccessKey Secret                               | `h6J9Zxxxxxxxxxxxxxxxxxxxx`    |
+| `DOMAINS`                  | 主域名，多个用**英文逗号**隔开                        | `example.com,test.org`         |
+| `ALIYUN_CDN_DOMAINS`       | CDN 域名，与 DOMAINS 顺序对应，多个用**英文逗号**隔开 | `cdn.example.com,img.test.org` |
+| `EMAIL`                    | 接收通知的邮箱地址                                    | `your-email@example.com`       |
 
 ### 第四步：触发工作流运行
 
@@ -57,15 +57,20 @@
 1. 提交完成后，点击仓库顶部的 **"Actions"** 选项卡
 2. 查看工作流运行状态和详细日志
 3. 如果所有配置正确，工作流会显示绿色的对勾（✅），表示执行成功
-4. 登录 [阿里云CDN控制台](https://cdn.console.aliyun.com/)，检查证书是否已更新
+4. 登录 [阿里云 CDN 控制台](https://cdn.console.aliyun.com/)，检查证书是否已更新
 
 ## ⚠️ 重要注意事项
 
 - **安全性**：阿里云 AK/SK 是非常敏感的凭证，务必通过 **Secrets** 的方式配置，绝不要直接写在代码文件里
-- **域名对应关系**：`DOMAINS` 和 `ALIYUN_CDN_DOMAINS` 的顺序必须严格对应，否则会导致证书部署到错误的CDN域名上
+- **域名对应关系**：`DOMAINS` 和 `ALIYUN_CDN_DOMAINS` 的顺序必须严格对应，否则会导致证书部署到错误的 CDN 域名上
 - **分隔符**：多个域名之间使用**英文逗号**分隔，不要使用空格或其他符号
 - **首次运行**：建议手动触发一次以确保配置无误
-- **费用**：Let's Encrypt 证书本身是免费的，但关联的阿里云CDN、DNS等服务可能会产生正常费用
+- **费用**：Let's Encrypt 证书本身是免费的，但关联的阿里云 CDN、DNS 等服务可能会产生正常费用
+
+## 在 Actions 里查看状态
+
+github 修改了 action 的安全措施，fork 后需要去手动启用才能开始自动任务。需要在 Actions 里查看定时任务执行情况
+![Image](https://cdn.fengxianhub.top/resources-master/638562892-f3255983-7032-4b18-b3f7-113b1346cdd3.png)
 
 ## 🔧 技术支持
 
@@ -75,6 +80,6 @@
 2. 确保所有秘密变量已正确设置
 3. 确认阿里云 RAM 用户具有所需权限
 
-------
+---
 
-至此，您就完成了所有设置，之后每隔约60天，GitHub 就会自动帮你免费续期并部署证书，一劳永逸。
+至此，您就完成了所有设置，之后每隔约 60 天，GitHub 就会自动帮你免费续期并部署证书，一劳永逸。
