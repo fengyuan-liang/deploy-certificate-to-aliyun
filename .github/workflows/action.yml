@@ -2,27 +2,72 @@ name: Auto Renew and Deploy SSL Certificates
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   schedule:
-    - cron: '0 0 20 */2 *' # 每两个月的第二十天执行一次
+    - cron: '0 0 20 */2 *'
 
 jobs:
   renew-deploy-cert:
     runs-on: ubuntu-latest
+    # 一旦 3.16 alpha 的 API 又变了，让部署不阻断合并
+    # 想让它必须绿就把这行去掉
+    continue-on-error: false
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    # ① 允许预发布，才能真正安装 3.16.0-alpha.2
+    - name: Set up Python (3.16 alpha)
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.13.0'
+        python-version: '3.16.0-alpha.2'
+        allow-prereleases: true
+        check-latest: false
+        cache: 'pip'
+
+    - name: Verify Python
+      shell: bash
+      run: |
+        python -V
+        python -c "import sysconfig; print('SOABI=', sysconfig.get_config_var('SOABI'))"
+
+    # ② 先把 cffi 用能成功的方式装好（按优先级三层回退）
+    - name: Ensure cffi works on 3.16
+      shell: bash
+      run: |
+        set -o pipefail
+        python -m pip install -U pip setuptools wheel
+
+        install_cffi() {
+          # 1) 优先 abi3 wheel（cp39-abi3 兼容 3.9+，无需现场编译）
+          python -m pip install --no-cache-dir --force-reinstall --only-binary=:all: 'cffi>=1.17.1' && return 0
+          # 2) 退而求其次，从源码编（1.17+ 已不再用 Py_FileSystemDefaultEncoding）
+          python -m pip install --no-cache-dir --force-reinstall 'cffi>=1.17.1' && return 0
+          # 3) 最后一招，直接装 git main
+          python -m pip install --no-cache-dir --force-reinstall \
+            'cffi @ git+https://github.com/python-cffi/cffi.git@main' && return 0
+          return 1
+        }
+
+        install_cffi || {
+          echo "[fatal] cffi cannot be installed on 3.16"; exit 1;
+        }
+
+        python -c "import cffi; print('cffi', cffi.__version__)"
+        python -c "from cffi import FFI; FFI().dlopen(None); print('dlopen ok')"
+
+    # ③ 装依赖时禁止 build isolation，否则还会重复编 cffi
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python -m pip install -U --no-build-isolation \
+          'aliyun-python-sdk-core>=2.16' \
+          'aliyun-python-sdk-cdn>=1.1'
+        python -m pip install -U --no-build-isolation -r requirements.txt
 
     - name: Install acme.sh
       env:
-        EMAIL: ${{ secrets.EMAIL}}
+        EMAIL: ${{ secrets.EMAIL }}
       run: |
         sudo apt-get update
         sudo apt-get install -y socat
@@ -44,26 +89,24 @@ jobs:
       run: |
         IFS=',' read -r -a domain_array <<< "${DOMAINS}"
         for domain in "${domain_array[@]}"; do
-          ~/.acme.sh/acme.sh --issue --dns dns_ali -d "*.${domain}" \
-          --key-file ~/certs/${domain}/privkey.pem --fullchain-file ~/certs/${domain}/fullchain.pem
+          ~/.acme.sh/acme.sh --issue --dns dns_ali -d "*.${domain}" -d "${domain}" --force
+          ~/.acme.sh/acme.sh --install-cert -d "*.${domain}" \
+            --key-file       ~/certs/${domain}/privkey.pem \
+            --fullchain-file ~/certs/${domain}/fullchain.pem
+          ls -l ~/certs/${domain}/privkey.pem ~/certs/${domain}/fullchain.pem
         done
-
-
-    - name: Install Python dependencies
-      run: pip install -r requirements.txt
 
     - name: Upload certificates to Alibaba Cloud CDN
       env:
         ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
         ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
-        # 要设置域名的二级域名，例如要设置*.example.com，这里填写的就是example.com, 多个域名用英文逗号隔开
         DOMAINS: ${{ secrets.DOMAINS }}
-        # 设置阿里云cdn域名，一般是三级域名，例如cdn.example.com，需要跟上面的DOMAINS对应，否则会设置错误
         ALIYUN_CDN_DOMAINS: ${{ secrets.ALIYUN_CDN_DOMAINS }}
-  
+        CERT_DIR: ${{ github.workspace }}/certs
       run: python upload_certs_to_aliyun.py
 
     - name: Clean up
+      if: always()
       env:
         DOMAINS: ${{ secrets.DOMAINS }}
       run: |
